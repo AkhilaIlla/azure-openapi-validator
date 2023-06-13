@@ -1,3 +1,5 @@
+import _ from "lodash"
+
 /**
  * get all properties as array
  */
@@ -152,25 +154,76 @@ export function isXmsResource(schema: any) {
 
 export function isSchemaEqual(a: any, b: any): boolean {
   if (a && b) {
-    const propsA = Object.getOwnPropertyNames(a);
-    const propsB = Object.getOwnPropertyNames(b);
+    const propsA = Object.getOwnPropertyNames(a)
+    const propsB = Object.getOwnPropertyNames(b)
     if (propsA.length === propsB.length) {
       for (let i = 0; i < propsA.length; i++) {
-        const propsAName = propsA[i];
-        const [propA, propB] = [a[propsAName], b[propsAName]];
+        const propsAName = propsA[i]
+        const [propA, propB] = [a[propsAName], b[propsAName]]
         if (typeof propA === "object") {
           if (!isSchemaEqual(propA, propB)) {
-            return false;
+            return false
           } else if (i === propsA.length - 1) {
-            return true;
+            return true
           }
         } else if (propA !== propB) {
-          return false;
+          return false
         } else if (propA === propB && i === propsA.length - 1) {
-          return true;
+          return true
         }
       }
     }
   }
-  return false;
+  return false
+}
+
+const providerAndNamespace = "/providers/[^/]+"
+const resourceTypeAndResourceName = "(?:/\\w+/default|/\\w+/{[^/]+})"
+const queryParam = "(?:\\?\\w+)"
+const resourcePathRegEx = new RegExp(`${providerAndNamespace}${resourceTypeAndResourceName}+${queryParam}?$`, "gi")
+export function getResourcesPathHierarchyBasedOnResourceType(path: string) {
+  const index = path.lastIndexOf("/providers/")
+  if (index === -1) {
+    return []
+  }
+  const lastProvider = path.substr(index)
+  const result = []
+  const matches = lastProvider.match(resourcePathRegEx)
+  if (matches && matches.length) {
+    const match = matches[0]
+    // slice the array to remove 'providers', provider namespace
+    const resourcePathSegments = match.split("/").slice(3)
+    for (const resourcePathSegment of resourcePathSegments) {
+      if (resourcePathSegment.startsWith("{") || resourcePathSegment === "default") {
+        continue
+      }
+      result.push(resourcePathSegment)
+    }
+  }
+  return result
+}
+
+/**
+ * Recursively searches an object for a key with the given name, returning the full path to the object.
+ * @param object the object to search
+ * @param keyName the key to look for
+ * @param path optional path parameter used for the recursion and to optionally add a prefix to the found path
+ * @returns full path to the key as an array, or an empty array if the key could not be found
+ */
+export function deepFindObjectKeyPath(object: any, keyName: string, path: string[] = []) {
+  if (!_.isObject(object)) {
+    return []
+  }
+  if (_.has(object, keyName)) {
+    return _.concat(path, keyName)
+  }
+
+  for (const [key, value] of Object.entries(object)) {
+    const result: any = deepFindObjectKeyPath(value, keyName, _.concat(path, key))
+    if (result) {
+      return result
+    }
+  }
+
+  return []
 }
