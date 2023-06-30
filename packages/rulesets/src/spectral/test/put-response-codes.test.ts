@@ -3,6 +3,7 @@ import linterForRule from "./utils"
 
 const LR_AND_SYNC_ERROR =
   "Synchronous and long-running PUT operations must have responses with 200, 201 and default return codes. They also must not have other response codes."
+const NON_EMPTY_ERROR = "PUT operation response codes must be non-empty"
 
 let linter: Spectral
 
@@ -357,7 +358,7 @@ test("PutResponseCodes should find errors for put with no responses defined", ()
   return linter.run(myOpenApiDocument).then((results) => {
     expect(results.length).toBe(1)
     expect(results[0].path.join(".")).toBe("paths./foo.put")
-    expect(results[0].message).toContain("PUT operation response codes must be non-empty.")
+    expect(results[0].message).toContain(NON_EMPTY_ERROR)
   })
 })
 
@@ -418,7 +419,7 @@ test("PutResponseCodes should find errors for put with no responses specified", 
   return linter.run(myOpenApiDocument).then((results) => {
     expect(results.length).toBe(1)
     expect(results[0].path.join(".")).toBe("paths./foo.put")
-    expect(results[0].message).toContain("PUT operation response codes must be non-empty.")
+    expect(results[0].message).toContain(NON_EMPTY_ERROR)
   })
 })
 
